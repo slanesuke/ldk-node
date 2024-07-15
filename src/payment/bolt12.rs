@@ -15,6 +15,7 @@ use lightning::offers::invoice::Bolt12Invoice;
 use lightning::offers::offer::{Amount, Offer};
 use lightning::offers::parse::Bolt12SemanticError;
 use lightning::offers::refund::Refund;
+use lightning::util::string::UntrustedString;
 
 use rand::RngCore;
 
@@ -76,7 +77,7 @@ impl Bolt12Payment {
 			&offer,
 			quantity,
 			None,
-			payer_note,
+			payer_note.clone(),
 			payment_id,
 			retry_strategy,
 			max_total_routing_fee_msat,
@@ -95,6 +96,7 @@ impl Bolt12Payment {
 					preimage: None,
 					secret: None,
 					offer_id: offer.id(),
+					payer_note: payer_note.map(UntrustedString),
 				};
 				let payment = PaymentDetails::new(
 					payment_id,
@@ -117,6 +119,7 @@ impl Bolt12Payment {
 							preimage: None,
 							secret: None,
 							offer_id: offer.id(),
+							payer_note: payer_note.map(UntrustedString),
 						};
 						let payment = PaymentDetails::new(
 							payment_id,
@@ -177,7 +180,7 @@ impl Bolt12Payment {
 			&offer,
 			quantity,
 			Some(amount_msat),
-			payer_note,
+			payer_note.clone(),
 			payment_id,
 			retry_strategy,
 			max_total_routing_fee_msat,
@@ -196,6 +199,7 @@ impl Bolt12Payment {
 					preimage: None,
 					secret: None,
 					offer_id: offer.id(),
+					payer_note: payer_note.map(UntrustedString),
 				};
 				let payment = PaymentDetails::new(
 					payment_id,
@@ -218,6 +222,7 @@ impl Bolt12Payment {
 							preimage: None,
 							secret: None,
 							offer_id: offer.id(),
+							payer_note: payer_note.map(UntrustedString),
 						};
 						let payment = PaymentDetails::new(
 							payment_id,

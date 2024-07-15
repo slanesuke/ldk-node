@@ -431,7 +431,7 @@ fn simple_bolt12_send_receive() {
 	let node_a_payments = node_a.list_payments();
 	assert_eq!(node_a_payments.len(), 1);
 	match node_a_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Offer { hash, preimage, secret: _, offer_id } => {
+		PaymentKind::Bolt12Offer { hash, preimage, secret: _, offer_id, .. } => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			assert_eq!(offer_id, offer.id());
@@ -448,7 +448,7 @@ fn simple_bolt12_send_receive() {
 	let node_b_payments = node_b.list_payments();
 	assert_eq!(node_b_payments.len(), 1);
 	match node_b_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Offer { hash, preimage, secret, offer_id } => {
+		PaymentKind::Bolt12Offer { hash, preimage, secret, offer_id, .. } => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			assert!(secret.is_some());
@@ -476,7 +476,7 @@ fn simple_bolt12_send_receive() {
 	let node_a_payments = node_a.list_payments_with_filter(|p| p.id == payment_id);
 	assert_eq!(node_a_payments.len(), 1);
 	let payment_hash = match node_a_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Offer { hash, preimage, secret: _, offer_id } => {
+		PaymentKind::Bolt12Offer { hash, preimage, secret: _, offer_id, .. } => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			assert_eq!(offer_id, offer.id());
@@ -495,7 +495,7 @@ fn simple_bolt12_send_receive() {
 	let node_b_payments = node_b.list_payments_with_filter(|p| p.id == node_b_payment_id);
 	assert_eq!(node_b_payments.len(), 1);
 	match node_b_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Offer { hash, preimage, secret, offer_id } => {
+		PaymentKind::Bolt12Offer { hash, preimage, secret, offer_id, .. } => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			assert!(secret.is_some());

@@ -11,6 +11,7 @@ use lightning::ln::msgs::DecodeError;
 use lightning::ln::{PaymentHash, PaymentPreimage, PaymentSecret};
 use lightning::offers::offer::OfferId;
 use lightning::util::ser::{Readable, Writeable};
+use lightning::util::string::UntrustedString;
 use lightning::{
 	_init_and_read_len_prefixed_tlv_fields, impl_writeable_tlv_based,
 	impl_writeable_tlv_based_enum, write_tlv_fields,
@@ -212,6 +213,14 @@ pub enum PaymentKind {
 		secret: Option<PaymentSecret>,
 		/// The ID of the offer this payment is for.
 		offer_id: OfferId,
+		/// The payer note for the payment.
+		///
+		/// Truncated to [`PAYER_NOTE_LIMIT`] characters.
+		///
+		/// This will always be `None` for payments serialized with version `v0.3.0`.
+		///
+		/// [`PAYER_NOTE_LIMIT`]: lightning::offers::invoice_request::PAYER_NOTE_LIMIT
+		payer_note: Option<UntrustedString>,
 	},
 	/// A [BOLT 12] 'refund' payment, i.e., a payment for a [`Refund`].
 	///
@@ -249,6 +258,7 @@ impl_writeable_tlv_based_enum!(PaymentKind,
 	},
 	(6, Bolt12Offer) => {
 		(0, hash, option),
+		(1, payer_note, option),
 		(2, preimage, option),
 		(4, secret, option),
 		(6, offer_id, required),

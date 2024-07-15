@@ -597,12 +597,14 @@ where
 						payment_context,
 						..
 					} => {
+						let payer_note = payment_context.invoice_request.payer_note_truncated;
 						let offer_id = payment_context.offer_id;
 						let kind = PaymentKind::Bolt12Offer {
 							hash: Some(payment_hash),
 							preimage: payment_preimage,
 							secret: Some(payment_secret),
 							offer_id,
+							payer_note,
 						};
 
 						let payment = PaymentDetails::new(
