@@ -48,13 +48,15 @@ impl Bolt12Payment {
 	///
 	/// If `payer_note` is `Some` it will be seen by the recipient and reflected back in the invoice
 	/// response.
-	pub fn send(&self, offer: &Offer, payer_note: Option<String>) -> Result<PaymentId, Error> {
+	///
+	/// If `quantity` is `Some` it represents the number of items requested.
+	pub fn send(
+		&self, offer: &Offer, quantity: Option<u64>, payer_note: Option<String>,
+	) -> Result<PaymentId, Error> {
 		let rt_lock = self.runtime.read().unwrap();
 		if rt_lock.is_none() {
 			return Err(Error::NotRunning);
 		}
-
-		let quantity = None;
 		let mut random_bytes = [0u8; 32];
 		rand::thread_rng().fill_bytes(&mut random_bytes);
 		let payment_id = PaymentId(random_bytes);
@@ -349,7 +351,7 @@ impl Bolt12Payment {
 			preimage: None,
 			secret: None,
 			payer_note: refund.payer_note().map(|note| UntrustedString(note.0.to_string())),
-			quantity,
+			quantity: refund.quantity(),
 		};
 		let payment = PaymentDetails::new(
 			payment_id,

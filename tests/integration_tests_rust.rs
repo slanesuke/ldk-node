@@ -425,7 +425,7 @@ fn simple_bolt12_send_receive() {
 
 	let expected_amount_msat = 100_000_000;
 	let offer = node_b.bolt12_payment().receive(expected_amount_msat, "asdf").unwrap();
-	let payment_id = node_a.bolt12_payment().send(&offer, None).unwrap();
+	let payment_id = node_a.bolt12_payment().send(&offer, None, None).unwrap();
 
 	expect_payment_successful_event!(node_a, Some(payment_id), None);
 	let node_a_payments = node_a.list_payments();
@@ -523,7 +523,7 @@ fn simple_bolt12_send_receive() {
 	let node_b_payments = node_b.list_payments_with_filter(|p| p.id == node_b_payment_id);
 	assert_eq!(node_b_payments.len(), 1);
 	match node_b_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Refund { hash, preimage, secret: _ , ..} => {
+		PaymentKind::Bolt12Refund { hash, preimage, secret: _, .. } => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			//TODO: We should eventually set and assert the secret sender-side, too, but the BOLT12
