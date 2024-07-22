@@ -286,8 +286,12 @@ impl Bolt12Payment {
 		let payment_hash = invoice.payment_hash();
 		let payment_id = PaymentId(payment_hash.0);
 
-		let kind =
-			PaymentKind::Bolt12Refund { hash: Some(payment_hash), preimage: None, secret: None };
+		let kind = PaymentKind::Bolt12Refund {
+			hash: Some(payment_hash),
+			preimage: None,
+			secret: None,
+			payer_note: refund.payer_note().map(|note| UntrustedString(note.0.to_string())),
+		};
 
 		let payment = PaymentDetails::new(
 			payment_id,
@@ -335,8 +339,12 @@ impl Bolt12Payment {
 
 		log_info!(self.logger, "Offering refund of {}msat", amount_msat);
 
-		let kind = PaymentKind::Bolt12Refund { hash: None, preimage: None, secret: None };
-
+		let kind = PaymentKind::Bolt12Refund {
+			hash: None,
+			preimage: None,
+			secret: None,
+			payer_note: refund.payer_note().map(|note| UntrustedString(note.0.to_string())),
+		};
 		let payment = PaymentDetails::new(
 			payment_id,
 			kind,

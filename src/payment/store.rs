@@ -233,6 +233,10 @@ pub enum PaymentKind {
 		preimage: Option<PaymentPreimage>,
 		/// The secret used by the payment.
 		secret: Option<PaymentSecret>,
+		/// The payer note for the refund payment.
+		///
+		/// This will always be `None` for payments serialized with version `v0.3.0`.
+		payer_note: Option<UntrustedString>,
 	},
 	/// A spontaneous ("keysend") payment.
 	Spontaneous {
@@ -269,6 +273,7 @@ impl_writeable_tlv_based_enum!(PaymentKind,
 	},
 	(10, Bolt12Refund) => {
 		(0, hash, option),
+		(1, payer_note, option),
 		(2, preimage, option),
 		(4, secret, option),
 	};
