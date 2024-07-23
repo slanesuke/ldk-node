@@ -467,10 +467,12 @@ fn simple_bolt12_send_receive() {
 	let offer = node_b.bolt12_payment().receive(offer_amount_msat, "asdf").unwrap();
 	assert!(node_a
 		.bolt12_payment()
-		.send_using_amount(&offer, None, less_than_offer_amount)
+		.send_using_amount(&offer, None, None, less_than_offer_amount)
 		.is_err());
-	let payment_id =
-		node_a.bolt12_payment().send_using_amount(&offer, None, expected_amount_msat).unwrap();
+	let payment_id = node_a
+		.bolt12_payment()
+		.send_using_amount(&offer, None, None, expected_amount_msat)
+		.unwrap();
 
 	expect_payment_successful_event!(node_a, Some(payment_id), None);
 	let node_a_payments = node_a.list_payments_with_filter(|p| p.id == payment_id);
