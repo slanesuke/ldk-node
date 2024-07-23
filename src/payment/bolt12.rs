@@ -313,7 +313,9 @@ impl Bolt12Payment {
 	}
 
 	/// Returns a [`Refund`] object that can be used to offer a refund payment of the amount given.
-	pub fn initiate_refund(&self, amount_msat: u64, expiry_secs: u32) -> Result<Refund, Error> {
+	pub fn initiate_refund(
+		&self, amount_msat: u64, expiry_secs: u32, quantity: Option<u64>,
+	) -> Result<Refund, Error> {
 		let mut random_bytes = [0u8; 32];
 		rand::thread_rng().fill_bytes(&mut random_bytes);
 		let payment_id = PaymentId(random_bytes);
@@ -337,6 +339,7 @@ impl Bolt12Payment {
 				log_error!(self.logger, "Failed to create refund builder: {:?}", e);
 				Error::RefundCreationFailed
 			})?
+			.quantity(quantity.unwrap_or(1))
 			.build()
 			.map_err(|e| {
 				log_error!(self.logger, "Failed to create refund: {:?}", e);
@@ -350,7 +353,7 @@ impl Bolt12Payment {
 			preimage: None,
 			secret: None,
 			payer_note: refund.payer_note().map(|note| UntrustedString(note.0.to_string())),
-			quantity: refund.quantity(),
+			quantity,
 		};
 		let payment = PaymentDetails::new(
 			payment_id,
