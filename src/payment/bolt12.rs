@@ -326,7 +326,7 @@ impl Bolt12Payment {
 		let retry_strategy = Retry::Timeout(LDK_PAYMENT_RETRY_TIMEOUT);
 		let max_total_routing_fee_msat = None;
 
-		let refund = self
+		let mut refund_builder = self
 			.channel_manager
 			.create_refund_builder(
 				amount_msat,
@@ -338,13 +338,16 @@ impl Bolt12Payment {
 			.map_err(|e| {
 				log_error!(self.logger, "Failed to create refund builder: {:?}", e);
 				Error::RefundCreationFailed
-			})?
-			.quantity(quantity.unwrap_or(1))
-			.build()
-			.map_err(|e| {
-				log_error!(self.logger, "Failed to create refund: {:?}", e);
-				Error::RefundCreationFailed
 			})?;
+
+		if let Some(qty) = quantity {
+			refund_builder = refund_builder.quantity(qty);
+		}
+
+		let refund = refund_builder.build().map_err(|e| {
+			log_error!(self.logger, "Failed to create refund: {:?}", e);
+			Error::RefundCreationFailed
+		})?;
 
 		log_info!(self.logger, "Offering refund of {}msat", amount_msat);
 
