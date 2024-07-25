@@ -318,6 +318,12 @@ dictionary PaymentDetails {
 	u64 latest_update_timestamp;
 };
 
+dictionary PaymentParameters {
+    u64? expiry_time;
+    u64? max_total_routing_fee_msat;
+    u64? max_total_cltv_expiry_delta;
+}
+
 [NonExhaustive]
 enum Network {
 	"Bitcoin",
