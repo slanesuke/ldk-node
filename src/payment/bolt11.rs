@@ -9,14 +9,14 @@ use crate::liquidity::LiquiditySource;
 use crate::logger::{log_error, log_info, FilesystemLogger, Logger};
 use crate::payment::store::{
 	LSPFeeLimits, PaymentDetails, PaymentDetailsUpdate, PaymentDirection, PaymentKind,
-	PaymentStatus, PaymentStore,
+	PaymentParameters, PaymentStatus, PaymentStore,
 };
 use crate::peer_store::{PeerInfo, PeerStore};
 use crate::types::{ChannelManager, KeysManager};
 
 use lightning::ln::channelmanager::{PaymentId, RecipientOnionFields, Retry, RetryableSendFailure};
 use lightning::ln::{PaymentHash, PaymentPreimage};
-use lightning::routing::router::{PaymentParameters, RouteParameters};
+use lightning::routing::router::RouteParameters;
 
 use lightning_invoice::{payment, Bolt11Invoice, Currency};
 
@@ -68,14 +68,18 @@ impl Bolt11Payment {
 		}
 	}
 
-	/// Send a payment given an invoice.
-	pub fn send(&self, invoice: &Bolt11Invoice) -> Result<PaymentId, Error> {
+	/// Send a payment given an invoice and optional [`PaymentParameters`].
+	///
+	/// [`PaymentParameters`]: PaymentParameters
+	pub fn send(
+		&self, invoice: &Bolt11Invoice, payment_parameters: Option<PaymentParameters>,
+	) -> Result<PaymentId, Error> {
 		let rt_lock = self.runtime.read().unwrap();
 		if rt_lock.is_none() {
 			return Err(Error::NotRunning);
 		}
 
-		let (payment_hash, recipient_onion, route_params) = payment::payment_parameters_from_invoice(&invoice).map_err(|_| {
+		let (payment_hash, recipient_onion, mut route_params) = payment::payment_parameters_from_invoice(&invoice).map_err(|_| {
 			log_error!(self.logger, "Failed to send payment due to the given invoice being \"zero-amount\". Please use send_using_amount instead.");
 			Error::InvalidInvoice
 		})?;
@@ -88,6 +92,18 @@ impl Bolt11Payment {
 				log_error!(self.logger, "Payment error: an invoice must not be paid twice.");
 				return Err(Error::DuplicatePayment);
 			}
+		}
+
+		if let Some(payment_params) = payment_parameters {
+			payment_params
+				.expiry_time
+				.map(|expiry| route_params.payment_params.expiry_time = Some(expiry));
+			payment_params
+				.max_total_routing_fee_msat
+				.map(|fee| route_params.max_total_routing_fee_msat = Some(fee));
+			payment_params
+				.max_total_cltv_expiry_delta
+				.map(|delta| route_params.payment_params.max_total_cltv_expiry_delta = delta);
 		}
 
 		let payment_secret = Some(*invoice.payment_secret());
@@ -184,7 +200,7 @@ impl Bolt11Payment {
 
 		let payment_secret = invoice.payment_secret();
 		let expiry_time = invoice.duration_since_epoch().saturating_add(invoice.expiry_time());
-		let mut payment_params = PaymentParameters::from_node_id(
+		let mut payment_params = lightning::routing::router::PaymentParameters::from_node_id(
 			invoice.recover_payee_pub_key(),
 			invoice.min_final_cltv_expiry_delta() as u32,
 		)

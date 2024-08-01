@@ -7,7 +7,7 @@ use common::{
 	setup_node, setup_two_nodes, wait_for_tx, TestSyncStore,
 };
 
-use ldk_node::payment::{PaymentKind, QrPaymentResult};
+use ldk_node::payment::{PaymentKind, PaymentParameters, QrPaymentResult};
 use ldk_node::{Builder, Event, NodeError};
 
 use lightning::ln::channelmanager::PaymentId;
@@ -156,8 +156,14 @@ fn multi_hop_sending() {
 	// Sleep a bit for gossip to propagate.
 	std::thread::sleep(std::time::Duration::from_secs(1));
 
+	let payment_params = PaymentParameters {
+		expiry_time: None,
+		max_total_routing_fee_msat: Some(75_000),
+		max_total_cltv_expiry_delta: Some(1000),
+	};
+
 	let invoice = nodes[4].bolt11_payment().receive(2_500_000, &"asdf", 9217).unwrap();
-	nodes[0].bolt11_payment().send(&invoice).unwrap();
+	nodes[0].bolt11_payment().send(&invoice, Some(payment_params)).unwrap();
 
 	let payment_id = expect_payment_received_event!(&nodes[4], 2_500_000);
 	let fee_paid_msat = Some(2000);
@@ -630,7 +636,7 @@ fn unified_qr_send_receive() {
 
 	let uqr_payment = node_b.unified_qr_payment().receive(expected_amount_sats, "asdf", expiry_sec);
 	let uri_str = uqr_payment.clone().unwrap();
-	let offer_payment_id: PaymentId = match node_a.unified_qr_payment().send(&uri_str) {
+	let offer_payment_id: PaymentId = match node_a.unified_qr_payment().send(&uri_str, None) {
 		Ok(QrPaymentResult::Bolt12 { payment_id }) => {
 			println!("\nBolt12 payment sent successfully with PaymentID: {:?}", payment_id);
 			payment_id
@@ -652,7 +658,7 @@ fn unified_qr_send_receive() {
 	// Still needs work
 	let uri_str_with_invalid_offer = &uri_str[..uri_str.len() - 1];
 	let invoice_payment_id: PaymentId =
-		match node_a.unified_qr_payment().send(uri_str_with_invalid_offer) {
+		match node_a.unified_qr_payment().send(uri_str_with_invalid_offer, None) {
 			Ok(QrPaymentResult::Bolt12 { payment_id: _ }) => {
 				panic!("Expected Bolt11 payment but got Bolt12");
 			},
@@ -676,7 +682,7 @@ fn unified_qr_send_receive() {
 	// Removed a character from the offer, so it would move on to the other parameters.
 	let txid = match node_a
 		.unified_qr_payment()
-		.send(&onchain_uqr_payment.as_str()[..onchain_uqr_payment.len() - 1])
+		.send(&onchain_uqr_payment.as_str()[..onchain_uqr_payment.len() - 1], None)
 	{
 		Ok(QrPaymentResult::Bolt12 { payment_id: _ }) => {
 			panic!("Expected on-chain payment but got Bolt12")

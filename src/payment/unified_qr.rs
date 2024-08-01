@@ -15,6 +15,7 @@
 //! [BOLT 12]: https://github.com/lightning/bolts/blob/master/12-offer-encoding.md
 use crate::error::Error;
 use crate::logger::{log_error, FilesystemLogger, Logger};
+use crate::payment::store::PaymentParameters;
 use crate::payment::{Bolt11Payment, Bolt12Payment, OnchainPayment};
 use crate::Config;
 
@@ -118,7 +119,7 @@ impl UnifiedQrPayment {
 		Ok(format_uri(uri))
 	}
 
-	/// Sends a payment given a [BIP 21] URI.
+	/// Sends a payment given a [BIP 21] URI and optional [`PaymentParameters`].
 	///
 	/// This method parses the provided URI string and attempts to send the payment. If the URI
 	/// has an offer and or invoice, it will try to pay the offer first followed by the invoice.
@@ -128,7 +129,10 @@ impl UnifiedQrPayment {
 	/// occurs, an `Error` is returned detailing the issue encountered.
 	///
 	/// [BIP 21]: https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki
-	pub fn send(&self, uri_str: &str) -> Result<QrPaymentResult, Error> {
+	/// [`PaymentParameters]: payment::store::PaymentParameters
+	pub fn send(
+		&self, uri_str: &str, payment_params: Option<PaymentParameters>,
+	) -> Result<QrPaymentResult, Error> {
 		let uri: bip21::Uri<NetworkUnchecked, Extras> =
 			uri_str.parse().map_err(|_| Error::InvalidUri)?;
 
@@ -143,7 +147,7 @@ impl UnifiedQrPayment {
 		}
 
 		if let Some(invoice) = uri_network_checked.extras.bolt11_invoice {
-			match self.bolt11_invoice.send(&invoice) {
+			match self.bolt11_invoice.send(&invoice, payment_params) {
 				Ok(payment_id) => return Ok(QrPaymentResult::Bolt11 { payment_id }),
 				Err(e) => log_error!(self.logger, "Failed to send BOLT11 invoice: {:?}. This is part of a unified QR code payment. Falling back to the on-chain transaction.", e),
 			}

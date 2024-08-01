@@ -93,7 +93,7 @@ interface Node {
 
 interface Bolt11Payment {
 	[Throws=NodeError]
-	PaymentId send([ByRef]Bolt11Invoice invoice);
+	PaymentId send([ByRef]Bolt11Invoice invoice, PaymentParameters? payment_parameters);
 	[Throws=NodeError]
 	PaymentId send_using_amount([ByRef]Bolt11Invoice invoice, u64 amount_msat);
 	[Throws=NodeError]
@@ -153,7 +153,7 @@ interface UnifiedQrPayment {
     [Throws=NodeError]
     string receive(u64 amount_sats, [ByRef]string message, u32 expiry_sec);
     [Throws=NodeError]
-    QrPaymentResult send([ByRef]string uri_str);
+    QrPaymentResult send([ByRef]string uri_str, PaymentParameters? payment_parameters);
 };
 
 [Error]
@@ -321,8 +321,9 @@ dictionary PaymentDetails {
 dictionary PaymentParameters {
     u64? expiry_time;
     u64? max_total_routing_fee_msat;
-    u64? max_total_cltv_expiry_delta;
-}
+    u32? max_total_cltv_expiry_delta;
+};
+
 
 [NonExhaustive]
 enum Network {

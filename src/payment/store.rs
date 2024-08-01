@@ -136,6 +136,7 @@ impl Readable for PaymentDetails {
 pub struct PaymentParameters {
 	/// Expiration of a payment to the payee, in seconds relative to the UNIX epoch.
 	pub expiry_time: Option<u64>,
+
 	/// The maximum total fees, in millisatoshi, that may accrue during route finding.
 	///
 	/// This limit also applies to the total fees that may arise while retrying failed payment
@@ -143,10 +144,13 @@ pub struct PaymentParameters {
 	///
 	/// Note that values below a few sats may result in some paths being spuriously ignored.
 	pub max_total_routing_fee_msat: Option<u64>,
+
 	/// The maximum total CLTV delta we accept for the route.
 	///
 	/// Defaults to [`DEFAULT_MAX_TOTAL_CLTV_EXPIRY_DELTA`].
-	pub max_total_cltv_expriy_delta: Option<u32>,
+	///
+	/// [`DEFAULT_MAX_TOTAL_CLTV_EXPIRY_DELTA`]: lightning::routing::router::DEFAULT_MAX_TOTAL_CLTV_EXPIRY_DELTA
+	pub max_total_cltv_expiry_delta: Option<u32>,
 }
 
 /// Represents the direction of a payment.
