@@ -4,13 +4,13 @@ use crate::config::{Config, LDK_PAYMENT_RETRY_TIMEOUT};
 use crate::error::Error;
 use crate::logger::{log_error, log_info, FilesystemLogger, Logger};
 use crate::payment::store::{
-	PaymentDetails, PaymentDirection, PaymentKind, PaymentStatus, PaymentStore,
+	PaymentDetails, PaymentDirection, PaymentKind, PaymentParameters, PaymentStatus, PaymentStore,
 };
 use crate::types::{ChannelManager, KeysManager};
 
 use lightning::ln::channelmanager::{PaymentId, RecipientOnionFields, Retry, RetryableSendFailure};
 use lightning::ln::{PaymentHash, PaymentPreimage};
-use lightning::routing::router::{PaymentParameters, RouteParameters};
+use lightning::routing::router::{PaymentParameters as PaymentParams, RouteParameters};
 use lightning::sign::EntropySource;
 
 use bitcoin::secp256k1::PublicKey;
@@ -41,8 +41,12 @@ impl SpontaneousPayment {
 		Self { runtime, channel_manager, keys_manager, payment_store, config, logger }
 	}
 
-	/// Send a spontaneous, aka. "keysend", payment
-	pub fn send(&self, amount_msat: u64, node_id: PublicKey) -> Result<PaymentId, Error> {
+	/// Send a spontaneous, or "keysend", payment given an amount in millisatoshi, node ID, and optional [`PaymentParameters`].
+	///
+	/// [`PaymentParameters`]: PaymentParameters
+	pub fn send(
+		&self, amount_msat: u64, node_id: PublicKey, payment_parameters: Option<PaymentParameters>,
+	) -> Result<PaymentId, Error> {
 		let rt_lock = self.runtime.read().unwrap();
 		if rt_lock.is_none() {
 			return Err(Error::NotRunning);
@@ -61,10 +65,23 @@ impl SpontaneousPayment {
 			}
 		}
 
-		let route_params = RouteParameters::from_payment_params_and_value(
-			PaymentParameters::from_node_id(node_id, self.config.default_cltv_expiry_delta),
+		let mut route_params = RouteParameters::from_payment_params_and_value(
+			PaymentParams::from_node_id(node_id, self.config.default_cltv_expiry_delta),
 			amount_msat,
 		);
+
+		if let Some(payment_params) = payment_parameters {
+			payment_params
+				.expiry_time
+				.map(|expiry| route_params.payment_params.expiry_time = Some(expiry));
+			payment_params
+				.max_total_routing_fee_msat
+				.map(|fee| route_params.max_total_routing_fee_msat = Some(fee));
+			payment_params
+				.max_total_cltv_expiry_delta
+				.map(|delta| route_params.payment_params.max_total_cltv_expiry_delta = delta);
+		}
+
 		let recipient_fields = RecipientOnionFields::spontaneous_empty();
 
 		match self.channel_manager.send_spontaneous_payment_with_retry(
