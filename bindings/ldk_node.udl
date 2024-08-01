@@ -95,7 +95,7 @@ interface Bolt11Payment {
 	[Throws=NodeError]
 	PaymentId send([ByRef]Bolt11Invoice invoice, PaymentParameters? payment_parameters);
 	[Throws=NodeError]
-	PaymentId send_using_amount([ByRef]Bolt11Invoice invoice, u64 amount_msat);
+	PaymentId send_using_amount([ByRef]Bolt11Invoice invoice, u64 amount_msat, PaymentParameters? payment_parameters);
 	[Throws=NodeError]
 	void send_probes([ByRef]Bolt11Invoice invoice);
 	[Throws=NodeError]

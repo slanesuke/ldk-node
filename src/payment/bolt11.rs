@@ -164,14 +164,17 @@ impl Bolt11Payment {
 		}
 	}
 
-	/// Send a payment given an invoice and an amount in millisatoshi.
+	/// Send a payment given an invoice, an amount in millisatoshi, and optional [`PaymentParameters`].
 	///
 	/// This will fail if the amount given is less than the value required by the given invoice.
 	///
 	/// This can be used to pay a so-called "zero-amount" invoice, i.e., an invoice that leaves the
 	/// amount paid to be determined by the user.
+	///
+	/// [`PaymentParameters`]: PaymentParameters
 	pub fn send_using_amount(
 		&self, invoice: &Bolt11Invoice, amount_msat: u64,
+		payment_parameters: Option<PaymentParameters>,
 	) -> Result<PaymentId, Error> {
 		let rt_lock = self.runtime.read().unwrap();
 		if rt_lock.is_none() {
@@ -212,8 +215,20 @@ impl Bolt11Payment {
 				.with_bolt11_features(features.clone())
 				.map_err(|_| Error::InvalidInvoice)?;
 		}
-		let route_params =
+		let mut route_params =
 			RouteParameters::from_payment_params_and_value(payment_params, amount_msat);
+
+		if let Some(payment_params) = payment_parameters {
+			payment_params
+				.expiry_time
+				.map(|expiry| route_params.payment_params.expiry_time = Some(expiry));
+			payment_params
+				.max_total_routing_fee_msat
+				.map(|fee| route_params.max_total_routing_fee_msat = Some(fee));
+			payment_params
+				.max_total_cltv_expiry_delta
+				.map(|delta| route_params.payment_params.max_total_cltv_expiry_delta = delta);
+		}
 
 		let retry_strategy = Retry::Timeout(LDK_PAYMENT_RETRY_TIMEOUT);
 		let recipient_fields = RecipientOnionFields::secret_only(*payment_secret);
