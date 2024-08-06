@@ -150,7 +150,7 @@ impl Bolt12Payment {
 	/// If `payer_note` is `Some` it will be seen by the recipient and reflected back in the invoice
 	/// response.
 	pub fn send_using_amount(
-		&self, offer: &Offer, payer_note: Option<String>, amount_msat: u64, quantity: Option<u64>,
+		&self, offer: &Offer, amount_msat: u64, payer_note: Option<String>, quantity: Option<u64>,
 	) -> Result<PaymentId, Error> {
 		let rt_lock = self.runtime.read().unwrap();
 		if rt_lock.is_none() {

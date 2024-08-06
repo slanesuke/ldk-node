@@ -122,7 +122,7 @@ interface Bolt12Payment {
 	[Throws=NodeError]
 	PaymentId send([ByRef]Offer offer, u64? quantity, string? payer_note);
 	[Throws=NodeError]
-	PaymentId send_using_amount([ByRef]Offer offer, string? payer_note, u64 amount_msat, u64? quantity);
+	PaymentId send_using_amount([ByRef]Offer offer, u64 amount_msat, string? payer_note, u64? quantity);
 	[Throws=NodeError]
 	Offer receive(u64 amount_msat, [ByRef]string description);
 	[Throws=NodeError]
