@@ -130,7 +130,7 @@ interface Bolt12Payment {
 	[Throws=NodeError]
 	Bolt12Invoice request_refund_payment([ByRef]Refund refund);
 	[Throws=NodeError]
-	Refund initiate_refund(u64 amount_msat, u32 expiry_secs, u64? quantity);
+	Refund initiate_refund(u64 amount_msat, u32 expiry_secs, string? payer_note, u64? quantity);
 };
 
 interface SpontaneousPayment {

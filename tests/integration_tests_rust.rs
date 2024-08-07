@@ -511,7 +511,8 @@ fn simple_bolt12_send_receive() {
 
 	// Now node_b refunds the amount node_a just overpaid.
 	let overpaid_amount = expected_amount_msat - offer_amount_msat;
-	let refund = node_b.bolt12_payment().initiate_refund(overpaid_amount, 3600, None).unwrap();
+	let refund =
+		node_b.bolt12_payment().initiate_refund(overpaid_amount, 3600, None, None).unwrap();
 	let invoice = node_a.bolt12_payment().request_refund_payment(&refund).unwrap();
 	expect_payment_received_event!(node_a, overpaid_amount);
 
