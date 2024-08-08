@@ -425,16 +425,27 @@ fn simple_bolt12_send_receive() {
 
 	let expected_amount_msat = 100_000_000;
 	let offer = node_b.bolt12_payment().receive(expected_amount_msat, "asdf").unwrap();
-	let payment_id = node_a.bolt12_payment().send(&offer, None, None).unwrap();
+	let quantity = Some(1);
+	let payer_note = Some("Test".to_string());
+	let payment_id = node_a.bolt12_payment().send(&offer, quantity, payer_note.clone()).unwrap();
 
 	expect_payment_successful_event!(node_a, Some(payment_id), None);
 	let node_a_payments = node_a.list_payments();
 	assert_eq!(node_a_payments.len(), 1);
 	match node_a_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Offer { hash, preimage, secret: _, offer_id, .. } => {
+		PaymentKind::Bolt12Offer {
+			hash,
+			preimage,
+			secret: _,
+			offer_id,
+			quantity: ref qty,
+			payer_note: ref note,
+		} => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			assert_eq!(offer_id, offer.id());
+			assert_eq!(&quantity, qty);
+			assert_eq!(payer_note.unwrap(), note.clone().unwrap().0);
 			//TODO: We should eventually set and assert the secret sender-side, too, but the BOLT12
 			//API currently doesn't allow to do that.
 		},
@@ -465,23 +476,34 @@ fn simple_bolt12_send_receive() {
 	let less_than_offer_amount = offer_amount_msat - 10_000;
 	let expected_amount_msat = offer_amount_msat + 10_000;
 	let offer = node_b.bolt12_payment().receive(offer_amount_msat, "asdf").unwrap();
+	let quantity = Some(1);
+	let payer_note = Some("Test".to_string());
 	assert!(node_a
 		.bolt12_payment()
 		.send_using_amount(&offer, less_than_offer_amount, None, None)
 		.is_err());
 	let payment_id = node_a
 		.bolt12_payment()
-		.send_using_amount(&offer, expected_amount_msat, None, None)
+		.send_using_amount(&offer, expected_amount_msat, quantity, payer_note.clone())
 		.unwrap();
 
 	expect_payment_successful_event!(node_a, Some(payment_id), None);
 	let node_a_payments = node_a.list_payments_with_filter(|p| p.id == payment_id);
 	assert_eq!(node_a_payments.len(), 1);
 	let payment_hash = match node_a_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Offer { hash, preimage, secret: _, offer_id, .. } => {
+		PaymentKind::Bolt12Offer {
+			hash,
+			preimage,
+			secret: _,
+			offer_id,
+			quantity: ref qty,
+			payer_note: ref note,
+		} => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
 			assert_eq!(offer_id, offer.id());
+			assert_eq!(&quantity, qty);
+			assert_eq!(payer_note.unwrap(), note.clone().unwrap().0);
 			//TODO: We should eventually set and assert the secret sender-side, too, but the BOLT12
 			//API currently doesn't allow to do that.
 			hash.unwrap()
@@ -511,8 +533,12 @@ fn simple_bolt12_send_receive() {
 
 	// Now node_b refunds the amount node_a just overpaid.
 	let overpaid_amount = expected_amount_msat - offer_amount_msat;
-	let refund =
-		node_b.bolt12_payment().initiate_refund(overpaid_amount, 3600, None, None).unwrap();
+	let quantity = Some(1);
+	let payer_note = Some("Test".to_string());
+	let refund = node_b
+		.bolt12_payment()
+		.initiate_refund(overpaid_amount, 3600, quantity, payer_note.clone())
+		.unwrap();
 	let invoice = node_a.bolt12_payment().request_refund_payment(&refund).unwrap();
 	expect_payment_received_event!(node_a, overpaid_amount);
 
@@ -526,9 +552,17 @@ fn simple_bolt12_send_receive() {
 	let node_b_payments = node_b.list_payments_with_filter(|p| p.id == node_b_payment_id);
 	assert_eq!(node_b_payments.len(), 1);
 	match node_b_payments.first().unwrap().kind {
-		PaymentKind::Bolt12Refund { hash, preimage, secret: _, .. } => {
+		PaymentKind::Bolt12Refund {
+			hash,
+			preimage,
+			secret: _,
+			quantity: ref qty,
+			payer_note: ref note,
+		} => {
 			assert!(hash.is_some());
 			assert!(preimage.is_some());
+			assert_eq!(&quantity, qty);
+			assert_eq!(payer_note.unwrap(), note.clone().unwrap().0)
 			//TODO: We should eventually set and assert the secret sender-side, too, but the BOLT12
 			//API currently doesn't allow to do that.
 		},
