@@ -150,7 +150,7 @@ impl Bolt12Payment {
 	/// If `payer_note` is `Some` it will be seen by the recipient and reflected back in the invoice
 	/// response.
 	pub fn send_using_amount(
-		&self, offer: &Offer, amount_msat: u64, payer_note: Option<String>, quantity: Option<u64>,
+		&self, offer: &Offer, amount_msat: u64, quantity: Option<u64>, payer_note: Option<String>,
 	) -> Result<PaymentId, Error> {
 		let rt_lock = self.runtime.read().unwrap();
 		if rt_lock.is_none() {
@@ -314,8 +314,8 @@ impl Bolt12Payment {
 
 	/// Returns a [`Refund`] object that can be used to offer a refund payment of the amount given.
 	pub fn initiate_refund(
-		&self, amount_msat: u64, expiry_secs: u32, payer_note: Option<String>,
-		quantity: Option<u64>,
+		&self, amount_msat: u64, expiry_secs: u32, quantity: Option<u64>,
+		payer_note: Option<String>,
 	) -> Result<Refund, Error> {
 		let mut random_bytes = [0u8; 32];
 		rand::thread_rng().fill_bytes(&mut random_bytes);

@@ -122,7 +122,7 @@ interface Bolt12Payment {
 	[Throws=NodeError]
 	PaymentId send([ByRef]Offer offer, u64? quantity, string? payer_note);
 	[Throws=NodeError]
-	PaymentId send_using_amount([ByRef]Offer offer, u64 amount_msat, string? payer_note, u64? quantity);
+	PaymentId send_using_amount([ByRef]Offer offer, u64 amount_msat, u64? quantity, string? payer_note);
 	[Throws=NodeError]
 	Offer receive(u64 amount_msat, [ByRef]string description);
 	[Throws=NodeError]
@@ -130,7 +130,7 @@ interface Bolt12Payment {
 	[Throws=NodeError]
 	Bolt12Invoice request_refund_payment([ByRef]Refund refund);
 	[Throws=NodeError]
-	Refund initiate_refund(u64 amount_msat, u32 expiry_secs, string? payer_note, u64? quantity);
+	Refund initiate_refund(u64 amount_msat, u32 expiry_secs, u64? quantity, string? payer_note);
 };
 
 interface SpontaneousPayment {
